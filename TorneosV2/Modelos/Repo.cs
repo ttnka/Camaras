@@ -94,33 +94,41 @@ namespace TorneosV2.Modelos
         }
         public virtual async Task<TEntity> Update(TEntity entityToUpdate)
         {
-            var dbSet = context.Set<TEntity>();
+            try
+            {
+                var dbSet = context.Set<TEntity>();
                 dbSet.Attach(entityToUpdate);
                 context.Entry(entityToUpdate).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+                await context.SaveChangesAsync();      
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"No fue posible actualizar el registro {ex}");
+            }
+
             return entityToUpdate;
             
         }
 
         // Aqui agregue las funciones que yo hice
 
-        public virtual async Task<ApiRespuesta<TEntity>> UpdateDiferente(TEntity entityToUpdate, string id)
+        public virtual async Task<ApiRespuesta<TEntity>> UpdateMisDatos(TEntity entityToUpdate)
         {
-            ApiRespuesta<TEntity> resp = new() { Exito = false};
-            var dbSet = context.Set<TEntity>();
-            var existingEntity = await dbSet.FindAsync(id);
-
-            if (existingEntity != null)
+            ApiRespuesta<TEntity> resp = new() { Exito = false };
+            try
             {
-                context.Entry(existingEntity).CurrentValues.SetValues(entityToUpdate);
+                var dbSet = context.Set<TEntity>();
+                dbSet.Attach(entityToUpdate);
+                context.Entry(entityToUpdate).State = EntityState.Modified;
                 await context.SaveChangesAsync();
-                resp.Data = existingEntity;
                 resp.Exito = true;
+                resp.Data = entityToUpdate;
             }
-            else
+            catch (Exception ex)
             {
-                resp.MsnError.Add("No se encotro el registro a actualizar");
+                resp.MsnError.Add($"No fue posible actualizar el registro {ex}");
             }
+
             return resp;
 
         }

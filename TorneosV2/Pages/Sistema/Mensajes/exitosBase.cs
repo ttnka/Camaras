@@ -10,10 +10,10 @@ namespace TorneosV2.Pages.Sistema.Mensajes
 
 		protected override async Task OnInitializedAsync()
 		{
-			var timer = new System.Timers.Timer(10000);
-			timer.Elapsed += (sender, e) => NM.NavigateTo("/", true);
-			timer.Start();
+			
 		}
+
+
 	}
 }
 

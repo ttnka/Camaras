@@ -130,7 +130,7 @@
     {
         Leer();
         Msn = "";
-
+        BotonNuevo = false;
         StateHasChanged();
     }
 
@@ -151,17 +151,18 @@
                 user.Materno == ElUser.Materno)
                 return;
 
-            int Edo = ElUser.Estado == 3 ? 1 : ElUser.Estado;
-            Z110_User UserUpdated = new(ElUser.UserId, user.Nombre, user.Paterno, user.Materno, ElUser.Nivel,
-                ElUser.OrgId, ElUser.OldEmail, Edo, ElUser.Status);
-            UserUpdated.OrgAdd(ElUser.Org);
-            ApiRespuesta<Z110_User> resultado = await UserRepo.UpdateDiferente(UserUpdated, ElUser.UserId);
+            ElUser.Estado = ElUser.Estado == 3 ? 1 : ElUser.Estado;
+            ElUser.Nombre = user.Nombre;
+            ElUser.Paterno = user.Paterno;
+            ElUser.Materno = user.Materno ?? "";
+            //ElUser.OldEmail = user.Email;
+            ApiRespuesta<Z110_User> resultado = await UserRepo.UpdateMisDatos(ElUser);
 
-            string txt = resultado.Data.UserId; 
-
+            string txt = ""; 
+            
             if (resultado.Exito)
             {
-                ElUser = await UserRepo.GetById(txt);
+                await ActualizaElUser.InvokeAsync();
                 txt = $"Mail: {resultado.Data.OldEmail}, ";
                 txt += $"pertenece a la organizacion: {resultado.Data.Org.Comercial}    ,  ";
                 txt += $"Nivel: {Niveles[resultado.Data.Nivel]}"; ;
@@ -192,6 +193,7 @@
             await LogAll(logT);
         }
         Leer();
+        CheckPass();
         BotonNuevo = false;
         StateHasChanged();
     }

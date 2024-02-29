@@ -10,6 +10,7 @@ using Radzen;
 using Radzen.Blazor;
 using TorneosV2.Data;
 using TorneosV2.Modelos;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using static TorneosV2.Pages.Sistema.EntradaBase;
 
 namespace TorneosV2.Pages.Sistema
@@ -21,38 +22,59 @@ namespace TorneosV2.Pages.Sistema
         [Inject]
         public UserManager<IdentityUser> UManager { get; set; } = default!;
         [Inject]
+        public Repo<Z100_Org, ApplicationDbContext> OrgRepo { get; set; } = default!;
+        [Inject]
         public Repo<Z110_User, ApplicationDbContext> UserRepo { get; set; } = default!;
-        [Parameter]
-        public string Code { get; set; } = "Vacio";
-        public PassClase PassData { get; set; } = new();
 
+        [Parameter]
+        public string C { get; set; } = "Vacio";
+        [Parameter]
+        public string D { get; set; } = "Vacio";
+        [Parameter]
+        public string T { get; set; } = "Vacio";
+
+        public PassClase PassData { get; set; } = new();
+        public Z110_User UserTmp { get; set; } = default!;
+        public Z100_Org OrgTmp { get; set; } = default!;
         protected string Msn { get; set; } = "";
         protected bool Primera { get; set; } = true;
         public RadzenTemplateForm<PassClase>? PassForm { get; set; } = new RadzenTemplateForm<PassClase>();
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
-            if (Primera)
-            {
-                Primera = false;
-                if (Code == "Vacio" || Code.Length < 10) NM.NavigateTo("/", true);
-            }
+            await Leer();
+        }
+                
+        protected async Task Leer()
+        {
+            if (C == null || C == "Vacio" || C.Length < 10 ||
+                     D == null || D == "Vacio" || D.Length < 10 ||
+                     T == null)
+                NM.NavigateTo("/", true);
+
+            string uId = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(D!));
+            UserTmp = await UserRepo.GetById(uId);
+            if (UserTmp == null) NM.NavigateTo("/", true);
+            OrgTmp = await OrgRepo.GetById(UserTmp!.OrgId);
+            if (OrgTmp == null) NM.NavigateTo("/", true);
+            UserTmp.OrgAdd(OrgTmp!);
+            PassData.Email = UserTmp!.OldEmail;
+
         }
 
         public async Task PassF(PassClase data)
         {
             try
             {
-                var Usuario = await UManager.FindByEmailAsync(PassData.Email);
-                if (Usuario == null) NM.NavigateTo("/", true);
-
-                string ElCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+                var usuario = await UManager.FindByIdAsync(UserTmp.UserId);
+                string ElCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(C));
                 
-                var resp = await UManager.ResetPasswordAsync(Usuario!, ElCode, PassData.Pass);
+                var resp = await UManager.ResetPasswordAsync(usuario!, ElCode, data.Pass);
                 if (resp.Succeeded)
                 {
-                    Z110_User elUserT = await UserRepo.GetById(Usuario!.Id);
-                    Z190_Bitacora bitT = new(elUserT.UserId, $"Se cambio de password {TBita}", elUserT.OrgId);
+                    Z190_Bitacora bitT = new(UserTmp.UserId, $"Se cambio de password {TBita}", UserTmp.OrgId);
+                    bitT.OrgAdd(UserTmp.Org);
+                    await BitacoraAll(bitT);
                 }
                 else
                 {
@@ -66,6 +88,35 @@ namespace TorneosV2.Pages.Sistema
                     $"Error al intentar un cambio de password {TBita} : {ex}", false);
                 await LogAll(logT);
             }
+        }
+
+        protected void CheckPass()
+        {
+            Msn = "";
+            if (PassData.Pass.Length < 3 || PassData.Confirm.Length < 3) return;
+
+            string[] Prohibido = { "password", "contraseña", "123", "aaa", "dios" };
+            bool IsMin = false;
+            bool IsMay = false;
+            bool IsNum = false;
+            bool HasRep = false;
+
+            foreach (char c in PassData.Pass)
+            {
+                IsMin = char.IsLower(c) ? true : IsMin;
+                IsMay = char.IsUpper(c) ? true : IsMay;
+                IsNum = char.IsNumber(c) ? true : IsNum;
+                HasRep = PassData.Pass.Count(x => x == c) > 2 ? true : HasRep;
+            }
+
+            Msn += PassData.Pass.Length < 6 ? "El Password debe ser minimo 6 caracteres!" : Msn;
+            Msn += PassData.Pass != PassData.Confirm ? "La confirmacion del password no coincide!" : Msn;
+            Msn += !IsMin ? "El Password requiere almenos una minuscula!" : Msn;
+            Msn += !IsMay ? "El Password requiere almenos una mayuscula!" : Msn;
+            Msn += !IsNum ? "El Password requiere almenos un numero!" : Msn;
+            Msn += HasRep ? "El Password no puede tener caracteres repetidos, 3 veces!" : Msn;
+            Msn += Prohibido.Contains(PassData.Pass.ToLower()) ? "El Password no es una palabra aceptable" : Msn;
+            Msn = Msn == "" ? "Ok" : Msn;
         }
 
         #region Usuario y Bitacora

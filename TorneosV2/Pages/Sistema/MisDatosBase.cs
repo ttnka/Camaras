@@ -13,7 +13,7 @@ namespace TorneosV2.Pages.Sistema
 	public class MisDatosBase : ComponentBase
 	{
         public const string TBita = "Mis datos!";
-        
+
         [Inject]
         public IEnviarMail ReenviarMail { get; set; } = default!;
         [Inject]
@@ -24,6 +24,8 @@ namespace TorneosV2.Pages.Sistema
         public Repo<Z100_Org, ApplicationDbContext> OrgRepo { get; set; } = default!;
         [Inject]
         public Repo<Z110_User, ApplicationDbContext> UserRepo { get; set; } = default!;
+        [Parameter]
+        public EventCallback ActualizaElUser { get; set; }
 
         public MisDatosClass MDUser { get; set; } = new();
         protected bool Leyendo { get; set; } = false;
@@ -53,6 +55,9 @@ namespace TorneosV2.Pages.Sistema
         protected void Leer()
         {
             if (ElUser == null) return;
+            MDUser.Pass = "";
+            MDUser.ConfPass = "";
+            MDUser.ConfEmail = "";
             MDUser.Email = ElUser.OldEmail;
             MDUser.Nombre = ElUser.Nombre;
             MDUser.Paterno = ElUser.Paterno;
@@ -121,7 +126,8 @@ namespace TorneosV2.Pages.Sistema
                 bool HasRep = false;
 
                 if (MDUser.Pass.Length < 2 || MDUser.ConfPass.Length < 2) return;
-                Msn = MDUser.Pass.Length < 6 ? "Password muy corto, " : Msn;
+
+                
                 foreach (char c in MDUser.Pass)
                 {
                     IsMin = char.IsLower(c) ? true : IsMin;
@@ -130,11 +136,12 @@ namespace TorneosV2.Pages.Sistema
                     HasRep = MDUser.Pass.Count(x => x == c) > 2 ? true : HasRep;
                 }
 
-                Msn = !IsMin ? "El Password requiere almenos una minuscula!" : Msn;
-                Msn = !IsMay ? "El Password requiere almenos una mayuscula!" : Msn;
-                Msn = !IsNum ? "El Password requiere almenos un numero!" : Msn;
-                Msn = HasRep ? "El Password no puede tener caracteres repetidos, 3 veces!" : Msn;
-                Msn = Prohibido.Contains(MDUser.Pass.ToLower()) ? "El Password no es una palabra aceptable" : Msn;
+                Msn = MDUser.Pass.Length < 6 ? "El Password requiere al menos 6 caracteres! " : Msn;
+                Msn += !IsMin ? "El Password requiere almenos una minuscula! " : Msn;
+                Msn += !IsMay ? "El Password requiere almenos una mayuscula! " : Msn;
+                Msn += !IsNum ? "El Password requiere almenos un numero! " : Msn;
+                Msn += HasRep ? "El Password no puede tener caracteres repetidos, 3 veces! " : Msn;
+                Msn += Prohibido.Contains(MDUser.Pass.ToLower()) ? "El Password no es una palabra aceptable! " : Msn;
 
                 Msn = Msn == "" ? "Ok" : Msn;
             }
@@ -143,9 +150,10 @@ namespace TorneosV2.Pages.Sistema
                 Msn = "Ok";
             }
 
+
             Msn = (Msn == "Ok" && MDUser.Email.Length > 5 && MDUser.Nombre.Length > 1 && MDUser.Paterno.Length > 1) ?
                  Msn : "Falta informacion en tu formulario!";
-
+            BotonNuevo = Msn == "Ok" ? false : true; 
         }
 
 

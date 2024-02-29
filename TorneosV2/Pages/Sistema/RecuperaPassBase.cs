@@ -14,6 +14,9 @@ namespace TorneosV2.Pages.Sistema
 	public class RecuperaPassBase : ComponentBase 
 	{
         public const string TBita = "Recupera tu password";
+
+        [Inject]
+        public Repo<Z100_Org, ApplicationDbContext> OrgRepo { get; set; } = default!;
         [Inject]
         public Repo<Z110_User, ApplicationDbContext> UserRepo { get; set; } = default!;
         [Inject]
@@ -41,25 +44,30 @@ namespace TorneosV2.Pages.Sistema
                 {
                     avance += "Se encontro el usuario por mail, ";
                     Usuario = await UserRepo.GetById(user!.Id);
-                    
                     if (Usuario == null) return;
-                    string t = Guid.NewGuid().ToString();
+
+                    var orgTemp = await OrgRepo.GetById(Usuario.OrgId);
+                    if (orgTemp == null) return;
+
+                    string t = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())); 
                     var code = await UManager.GeneratePasswordResetTokenAsync(user!);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var backUrl = NM.ToAbsoluteUri($"/nuevopass?c={code}&d={user.Id}&t={t}");
+                    string uId = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(user.Id));
+
+                    var backUrl = NM.ToAbsoluteUri($"/cambio/{code}/{uId}/{t}");
                     avance += $"se genero codigo y pagina de recuperacion {backUrl}, ";
                     MailCampos mCs = new()
                     {
-                        Titulo = $"Tenemos una solicitud de cambio de password dominio {Constantes.ElDominio} con tu e-mail!",
-                        Cuerpo = $"Hola {Usuario.Nombre}, <br />Soy el administrador de {Constantes.ElDominio}, y tenemos ",
+                        Titulo = $"Recibimos una solicitud de cambio de password para tu usuario!",
+                        Cuerpo = $"Hola {Usuario.Nombre}, <br /><br />Soy el administrador de {Constantes.ElDominio}, y tenemos ",
                     };
 
                     mCs.Cuerpo += $"una direccion para que cambies tu password: <br />";
                     mCs.Cuerpo += $"recuerda tu password deben ser 6 caracteres ";
-                    mCs.Cuerpo += $"utiliza una nueva palabra que contenga una letra mayuscula, una minuscula y un numero, <br />";
+                    mCs.Cuerpo += $"utiliza una nueva palabra que contenga: <br /> una letra mayuscula, una minuscula y un numero, <br />";
                     mCs.Cuerpo += "Entra a nuestra pagina con esta liga ==>> ";
-                    mCs.Cuerpo += $"<a href=\"{Constantes.ElDominio}{backUrl}\"> abre nuestra pagina aqui</a> <== <br />";
-                    mCs.Cuerpo += $"si tienes dudas contactanos via Email {Constantes.DeMail01Soporte} <br /> <br />";
+                    mCs.Cuerpo += $"<a href=\"{backUrl}\"> abre nuestra pagina aqui</a> <== <br /><br /><br /><br />";
+                    mCs.Cuerpo += $"Si tienes dudas contactanos via Email {Constantes.DeMail01Soporte} <br />";
                     mCs.Cuerpo += $"Saludos del equipo de {Constantes.ElDominio}";
 
                     mCs.ParaNombre.Add(Usuario.Completo);

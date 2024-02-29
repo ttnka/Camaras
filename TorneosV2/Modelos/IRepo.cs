@@ -18,6 +18,8 @@ namespace TorneosV2.Modelos
 
         // de mi cosecha
 
+        Task<ApiRespuesta<TEntity>> UpdateMisDatos(TEntity entityToUpdate);
+
         Task<IEnumerable<TEntity>> InsertPlus(IEnumerable<TEntity> entities);
 
         Task<IEnumerable<TEntity>> UpdatePlus(IEnumerable<TEntity> entities);

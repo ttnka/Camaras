@@ -1,28 +1,23 @@
 ﻿@page "/cambio"
-@page "/cambio/{code}"
+@page "/cambio/{c}/{d}/{t}"
 @inherits CambioPassBase
-
 
 <RadzenTemplateForm @ref="PassForm" Data="@PassData" Submit="@((PassClase arg) => { PassF(arg); })">
     <RadzenFieldset Text="Indentificate" Style="width:80%">
-        <div class="container-fluid" style="background: lightgray;">
+        <div class="container-fluid">
 
             <div class="row" >
                 <div class="col-md-4 align-items-center d-flex">
                     <RadzenLabel Text="Mail" />
                 </div>
                 <div class="col-md-8">
-
-                    <RadzenTextBox style="width: 90%;" Name="EMail" @bind-Value="PassData.Email"
-                                   Placeholder="e-Mail" MaxLength="75" Change="CheckPass" />
-                    <RadzenRequiredValidator Component="EMail" Text="Email es requerido" />
-                    <RadzenEmailValidator Component="EMail" Text="Se requiere un Email Valido" />
-
+                    
+                    <RadzenLabel>@PassData.Email</RadzenLabel>
 
                 </div>
             </div>
 
-            <div class="row" style="background:gray">
+            <div class="row" style="background: lightgray">
                 <div class="col-md-4 align-items-center d-flex">
                     <RadzenLabel Text="Nuevo Password" />
                 </div>
@@ -30,7 +25,7 @@
 
                     <RadzenTextBox style="width: 90%;" Name="Pass" @bind-Value="PassData.Pass"
                                    Placeholder="Nuevo password" MaxLength="75" Change="CheckPass" />
-                    <RadzenRequiredValidator Component="pass" Text="Password es requerido" />
+                    <RadzenRequiredValidator Component="Pass" Text="Un Password es requerido" />
 
                 </div>
             </div>
@@ -43,7 +38,7 @@
 
                     <RadzenTextBox style="width: 90%;" Name="Confirm" @bind-Value="PassData.Confirm"
                                    Placeholder="Repite el password" MaxLength="75" Change="CheckPass" />
-                    <RadzenRequiredValidator Component="confirm" Text="Repetir el password es requerido" />
+                    <RadzenRequiredValidator Component="Confirm" Text="Repetir el password es requerido" />
 
                 </div>
             </div>
@@ -52,6 +47,7 @@
                 <div class="col-md-4 align-items-center d-flex">
                 </div>
                 <div class="col-md-8">
+                    
                     @if (Msn == "Ok")
                     {
                         <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success"
@@ -62,6 +58,7 @@
 
                     <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Danger" Class="m-1"
                                   Click="Cancelar" />
+                    <RadzenLabel Style="color: white">- @Msn - </RadzenLabel>
 
 
                 </div>
@@ -74,33 +71,7 @@
 
     private bool BotonNuevo = false;
     
-    void CheckPass()
-    {
-        Msn = "";
-        if (PassData.Pass.Length < 6 || PassData.Confirm.Length < 6 ) return;
-        
-
-        string[] Prohibido = { "password", "contraseña", "123", "aaa", "dios" };
-        bool IsMin = false;
-        bool IsMay = false;
-        bool IsNum = false;
-        bool HasRep = false;
-
-        foreach (char c in PassData.Pass)
-        {
-            IsMin = char.IsLower(c) ? true : IsMin;
-            IsMay = char.IsUpper(c) ? true : IsMay;
-            IsNum = char.IsNumber(c) ? true : IsNum;
-            HasRep = PassData.Pass.Count(x => x == c) > 2 ? true : HasRep;
-        }
-
-        Msn = !IsMin ? "El Password requiere almenos una minuscula!" : Msn;
-        Msn = !IsMay ? "El Password requiere almenos una mayuscula!" : Msn;
-        Msn = !IsNum ? "El Password requiere almenos un numero!" : Msn;
-        Msn = HasRep ? "El Password no puede tener caracteres repetidos, 3 veces!" : Msn;
-        Msn = Prohibido.Contains(PassData.Pass.ToLower()) ? "El Password no es una palabra aceptable" : Msn;
-        Msn = Msn == "" ? "Ok" : Msn;
-    }
+    
     void Cancelar()
     {
         PassData = new();

@@ -31,6 +31,11 @@ namespace TorneosV2.Pages.WebApp
             //await LeerOrgs();
         }
 
+        public async Task ReLeerElUser()
+        {
+            ElUser = await UserRepo.GetById(ElUser.UserId);
+            NM.NavigateTo(NM.Uri, true);
+        }
 
         #region Usuario y Bitacora
 
