@@ -14,9 +14,6 @@ namespace TorneosV2.Pages.Sistema
 	public class RecuperaPassBase : ComponentBase 
 	{
         public const string TBita = "Recupera tu password";
-
-        [Inject]
-        public Repo<Z100_Org, ApplicationDbContext> OrgRepo { get; set; } = default!;
         [Inject]
         public Repo<Z110_User, ApplicationDbContext> UserRepo { get; set; } = default!;
         [Inject]
@@ -25,7 +22,7 @@ namespace TorneosV2.Pages.Sistema
         public UserManager<IdentityUser> UManager { get; set; } = default!;
         [Inject]
         public IEnviarMail SendMail { get; set; } = default!;
-        
+
 
         public Z110_User Usuario { get; set; } = default!;
         public MailInfo RecuperaData { get; set; } = new();
@@ -44,30 +41,29 @@ namespace TorneosV2.Pages.Sistema
                 {
                     avance += "Se encontro el usuario por mail, ";
                     Usuario = await UserRepo.GetById(user!.Id);
+
                     if (Usuario == null) return;
 
-                    var orgTemp = await OrgRepo.GetById(Usuario.OrgId);
-                    if (orgTemp == null) return;
-
-                    string t = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())); 
                     var code = await UManager.GeneratePasswordResetTokenAsync(user!);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    string uId = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(user.Id));
 
-                    var backUrl = NM.ToAbsoluteUri($"/cambio/{code}/{uId}/{t}");
+                    var userId = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(user.Id));
+                    var t = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(Guid.NewGuid().ToString()));
+                    var backUrl = NM.ToAbsoluteUri($"/cambiopass/{code}/{user.Id}/{t}");
+
                     avance += $"se genero codigo y pagina de recuperacion {backUrl}, ";
                     MailCampos mCs = new()
                     {
-                        Titulo = $"Recibimos una solicitud de cambio de password para tu usuario!",
-                        Cuerpo = $"Hola {Usuario.Nombre}, <br /><br />Soy el administrador de {Constantes.ElDominio}, y tenemos ",
+                        Titulo = $"Tenemos una solicitud de cambio de password dominio {Constantes.ElDominio} con tu e-mail!",
+                        Cuerpo = $"Hola {Usuario.Nombre}, <br />Soy el administrador de {Constantes.ElDominio}, y tenemos ",
                     };
 
                     mCs.Cuerpo += $"una direccion para que cambies tu password: <br />";
                     mCs.Cuerpo += $"recuerda tu password deben ser 6 caracteres ";
-                    mCs.Cuerpo += $"utiliza una nueva palabra que contenga: <br /> una letra mayuscula, una minuscula y un numero, <br />";
-                    mCs.Cuerpo += "Entra a nuestra pagina con esta liga ==>> ";
-                    mCs.Cuerpo += $"<a href=\"{backUrl}\"> abre nuestra pagina aqui</a> <== <br /><br /><br /><br />";
-                    mCs.Cuerpo += $"Si tienes dudas contactanos via Email {Constantes.DeMail01Soporte} <br />";
+                    mCs.Cuerpo += $"utiliza una nueva palabra que contenga una letra mayuscula, una minuscula y un numero, <br />";
+                    mCs.Cuerpo += $"<br />Entra a nuestra pagina con esta liga ==>> ";
+                    mCs.Cuerpo += $"<a href=\"{backUrl}\"> abre nuestra pagina aqui</a> <== <br />";
+                    mCs.Cuerpo += $"si tienes dudas contactanos via Email {Constantes.DeMail01Soporte} <br /> <br />";
                     mCs.Cuerpo += $"Saludos del equipo de {Constantes.ElDominio}";
 
                     mCs.ParaNombre.Add(Usuario.Completo);
@@ -77,8 +73,8 @@ namespace TorneosV2.Pages.Sistema
                     avance += $"un mail con la informacion del cambio password! ";
 
                     Z190_Bitacora bitaT = new(Usuario.UserId, $"Se genero un cambio de password {TBita}", Usuario.OrgId);
-                    bitaT.OrgAdd(Usuario.Org);
-                    await BitacoraAll(bitaT);
+                    BitacoraMas(bitaT);
+                    await BitacoraWrite();
                 }
             }
             catch (Exception ex)
@@ -128,24 +124,25 @@ namespace TorneosV2.Pages.Sistema
         }
         [Inject]
         public NavigationManager NM { get; set; } = default!;
-        public Z190_Bitacora LastBita { get; set; } = new(userId: "", desc: "", orgId: "");
         public Z192_Logs LastLog { get; set; } = new(userId: "Sistema", desc: "", sistema: false);
-        public async Task BitacoraAll(Z190_Bitacora bita)
+        [CascadingParameter(Name = "LasBitacorasAll")]
+        public List<Z190_Bitacora> LasBitacoras { get; set; } = new List<Z190_Bitacora>();
+        public void BitacoraMas(Z190_Bitacora bita)
         {
-            try
+            if (!LasBitacoras.Any(b => b.BitacoraId == bita.BitacoraId))
             {
-                if (bita.BitacoraId != LastBita.BitacoraId)
-                {
-                    LastBita = bita;
-                    await BitaRepo.Insert(bita);
-                }
+
+                LasBitacoras.Add(bita);
             }
-            catch (Exception ex)
+        }
+        public async Task BitacoraWrite()
+        {
+            foreach (var b in LasBitacoras)
             {
-                Z192_Logs LogT = new(ElUser.UserId,
-                    $"Error al intentar escribir BITACORA, {TBita},{ex}", true);
-                await LogAll(LogT);
+                b.OrgAdd(ElUser.Org);
             }
+            await BitaRepo.InsertPlus(LasBitacoras);
+            LasBitacoras.Clear();
         }
 
         public async Task LogAll(Z192_Logs log)

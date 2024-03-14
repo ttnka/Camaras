@@ -25,12 +25,12 @@
                 <div class="col-md-4 align-items-center d-flex">
                 </div>
                 <div class="col-md-8">
-                    
+
                     <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success"
-                                    Class="m-1" ButtonType="ButtonType.Submit" Disabled="BotonNuevo">
+                                  Class="m-1" ButtonType="ButtonType.Submit" Disabled="BotonNuevo">
                         Recuperar
                     </RadzenButton>
-                    
+
                     <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Danger" Class="m-1"
                                   Click="Cancelar" />
 
@@ -49,6 +49,9 @@
     async Task SendInfo(MailInfo data)
     {
         BotonNuevo = true;
+        string text = "Dame un minuto, estamos enviando un email a tu cuenta para recuperar tu password, ";
+        text += "por favor revisa tu bandeja de no deseados en caso de que no encuentres el correo!";
+        ShowNotification(ElMsn("Info", "Estamos trabajando!", text, 0));
         await RecuperarTask();
     }
 
@@ -63,6 +66,11 @@
     void Cancelar()
     {
         RecuperaData = new();
+    }
+
+    public void ShowNotification(NotificationMessage message)
+    {
+        NS.Notify(message);
     }
 
 }

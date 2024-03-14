@@ -178,8 +178,8 @@
                 }
 
                 Z190_Bitacora bitaT = new(ElUser.UserId, txt, ElUser.OrgId);
-                bitaT.OrgAdd(ElUser.Org);
-                await BitacoraAll(bitaT);
+                BitacoraMas(bitaT);
+                await BitacoraWrite();
 
                 ShowNotification(ElMsn("Ok", "Nuevo administrador",
                             $"Estamos creando un nuevo ADMINISTRADOR de {org.Nombre} {org.Paterno} {org.Materno} !!!", 0));
@@ -187,8 +187,8 @@
                         $"Email:{org.Mail}, nombre {org.Nombre} {org.Paterno} {org.Materno}";
 
                 Z190_Bitacora bitaTemp1 = new(ElUser.UserId, txt1, ElUser.OrgId);
-                bitaTemp1.OrgAdd(ElUser.Org);
-                await BitacoraAll(bitaTemp1);
+                BitacoraMas(bitaTemp1);
+                await BitacoraWrite();
 
                 await LeerOrgs();
 

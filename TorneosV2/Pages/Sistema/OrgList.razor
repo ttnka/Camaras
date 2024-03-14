@@ -228,8 +228,8 @@ else
             txt = $"{TBita}, Se actualizo la info de org {org.Comercial}";
 
             Z190_Bitacora bitaT = new(ElUser.UserId, txt, ElUser.OrgId);
-            bitaT.OrgAdd(org);
-            await BitacoraAll(bitaT);
+            BitacoraMas(bitaT);
+            await BitacoraWrite();
         }
         else
         {
@@ -290,8 +290,8 @@ else
                 $"Se creo un nuevo registro de org {org.Comercial}", 0));
 
             Z190_Bitacora bitaT = new(ElUser.UserId, $"{TBita}, {txt}", ElUser.OrgId);
-            bitaT.OrgAdd(org);
-            await BitacoraAll(bitaT);
+            BitacoraMas(bitaT);
+            await BitacoraWrite();
         }
         else
         {

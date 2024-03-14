@@ -62,6 +62,7 @@ namespace TorneosV2.Pages.Sistema
         {
             IEnumerable<Z100_Org> resultado = await OrgsRepo.GetAll();
             if (resultado == null || resultado.Any()) return false;
+            
             try
             {
                 List<string> Errores = new();
@@ -197,9 +198,9 @@ namespace TorneosV2.Pages.Sistema
                 string txt = $"{TBita}, Se crearon las tablas por primera vez, con 2 empresas nuevas una administrador {Constantes.ElDominio}";
                 txt += $" su administrador y otra como empresa donde registrar al publico en general";
 
-                Z190_Bitacora bitaTemp = new (newUserAdmin.UserId, txt, newSysOrg.OrgId);
-                bitaTemp.OrgAdd(newSysOrg);
-                await BitacoraAll(bitaTemp);
+                Z190_Bitacora bitaT = new(newUserAdmin.UserId, txt, newSysOrg.OrgId);
+                BitacoraMas(bitaT);
+                await BitacoraWrite();
 
                 MailCampos mc = new();
                 mc.ParaNombre.Add(newUserAdmin.Completo);
@@ -213,9 +214,10 @@ namespace TorneosV2.Pages.Sistema
                 }
                 else
                 {
-                    bitaTemp.BitacoraId = Guid.NewGuid().ToString();
-                    bitaTemp.Desc = $"Se envio un mail con esta informacion {txt}";
-                    await BitacoraAll(bitaTemp);
+                    bitaT.BitacoraId = Guid.NewGuid().ToString();
+                    bitaT.Desc = $"Se envio un mail con esta informacion {txt}";
+                    BitacoraMas(bitaT);
+                    await BitacoraWrite();
                 }
                 return true;
             }
@@ -367,8 +369,8 @@ namespace TorneosV2.Pages.Sistema
                         txt += $"Grupo: {t.Grupo}, tipo: {t.Tipo}, titulo: {t.Titulo}, Texto: {t.Txt}";
                     }
                     Z190_Bitacora bita = new(userId: newUserAdmin.UserId, desc: txt, orgId: newSysOrg.OrgId);
-                    bita.OrgAdd(newSysOrg);
-                    await BitacoraAll(bita);
+                    BitacoraMas(bita);
+                    await BitacoraWrite();
                 }
             }
             catch (Exception ex)
@@ -390,24 +392,24 @@ namespace TorneosV2.Pages.Sistema
         [Inject]
         public Repo<Z192_Logs, ApplicationDbContext> LogRepo { get; set; } = default!;
 
-        public Z190_Bitacora LastBita { get; set; } = new(userId: "", desc: "", orgId: "");
-        public Z192_Logs LastLog { get; set; } = new("", "", false);
-        public async Task BitacoraAll(Z190_Bitacora bita)
+        public Z192_Logs LastLog { get; set; } = new(userId: "Sistema", desc: "", sistema: false);
+        
+        public List<Z190_Bitacora> LasBitacoras { get; set; } = new List<Z190_Bitacora>();
+        public void BitacoraMas(Z190_Bitacora bita)
         {
-            try
+            if (!LasBitacoras.Any(b => b.BitacoraId == bita.BitacoraId))
             {
-                if (bita.BitacoraId != LastBita.BitacoraId)
-                {
-                    LastBita = bita;
-                    await BitaRepo.Insert(bita);
-                }
+                LasBitacoras.Add(bita);
             }
-            catch (Exception ex)
+        }
+        public async Task BitacoraWrite()
+        {
+            foreach (var b in LasBitacoras)
             {
-                Z192_Logs LogT = new ("Sistema", $"Error al intentar iniciar, {TBita},{ex}",
-                    true);
-                await LogAll(LogT);
+                b.OrgAdd(newSysOrg);
             }
+            await BitaRepo.InsertPlus(LasBitacoras);
+            LasBitacoras.Clear();
         }
 
         public async Task LogAll(Z192_Logs log)

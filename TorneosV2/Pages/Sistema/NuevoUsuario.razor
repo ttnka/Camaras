@@ -118,12 +118,12 @@
 
 
 @code {
-    
+
     void Cancelar()
     {
         NuevoUser = new("", "", "", "", "", "", "", "", "", 3, "", true);
         Msn = "";
-        
+
         StateHasChanged();
     }
 
@@ -160,8 +160,8 @@
                 }
 
                 Z190_Bitacora bitaT = new(ElUser.UserId, txt, ElUser.OrgId);
-                bitaT.OrgAdd(ElUser.Org);
-                await BitacoraAll(bitaT);
+                BitacoraMas(bitaT);
+                await BitacoraWrite();
 
                 await LeerUsers();
 

@@ -171,9 +171,8 @@
                 txt = $"{TBita}, Actualizando datos {resultado.Data.Completo} " + txt;
 
                 Z190_Bitacora bitaT = new(ElUser.UserId, txt, ElUser.OrgId);
-                bitaT.OrgAdd(ElUser.Org);
-                await BitacoraAll(bitaT);
-
+                BitacoraMas(bitaT);
+                await BitacoraWrite();
             }
             else
             {

@@ -221,8 +221,8 @@ else
                     $"Se actualizo la info del usuario {user.Completo}", 0));
                 txt = $"{TBita}, Se actualizo la info del usuario {user.Completo}";
                 Z190_Bitacora bitaT = new(ElUser.UserId, txt, ElUser.OrgId);
-                bitaT.OrgAdd(ElUser.Org);
-                await BitacoraAll(bitaT);
+                BitacoraMas(bitaT);
+                await BitacoraWrite();
             }
             else
             {

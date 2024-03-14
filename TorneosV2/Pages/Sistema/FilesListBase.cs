@@ -45,7 +45,8 @@ namespace TorneosV2.Pages.Sistema
             IEnumerable<Z170_Files> resp = await FileRepo.Get(x => x.RegistroId == ElRegistro);
             LosDatos = (resp != null && resp.Any()) ? resp.ToList() : new List<Z170_Files>();
             Z190_Bitacora bitaTemp = new(ElUser.UserId, $"Consulto la seccion de {TBita}",  ElUser.OrgId);
-            await BitacoraAll(bitaTemp);   
+            BitacoraMas(bitaTemp);
+            await BitacoraWrite();
         }
 
         protected async Task<ApiRespuesta<Z170_Files>> Servicio(ServiciosTipos tipo, Z170_Files archivo)
@@ -112,15 +113,24 @@ namespace TorneosV2.Pages.Sistema
         }
         [Inject]
         public NavigationManager NM { get; set; } = default!;
-        public Z190_Bitacora LastBita { get; set; } = new(userId: "", desc: "", orgId: "");
         public Z192_Logs LastLog { get; set; } = new(userId: "Sistema", desc: "", sistema: false);
-        public async Task BitacoraAll(Z190_Bitacora bita)
+        [CascadingParameter(Name = "LasBitacorasAll")]
+        public List<Z190_Bitacora> LasBitacoras { get; set; } = new List<Z190_Bitacora>();
+        public void BitacoraMas(Z190_Bitacora bita)
         {
-            if (bita.BitacoraId != LastBita.BitacoraId)
+            if (!LasBitacoras.Any(b => b.BitacoraId == bita.BitacoraId))
             {
-                LastBita = bita;
-                await BitaRepo.Insert(bita);
+                LasBitacoras.Add(bita);
             }
+        }
+        public async Task BitacoraWrite()
+        {
+            foreach (var b in LasBitacoras)
+            {
+                b.OrgAdd(ElUser.Org);
+            }
+            await BitaRepo.InsertPlus(LasBitacoras);
+            LasBitacoras.Clear();
         }
 
         public async Task LogAll(Z192_Logs log)

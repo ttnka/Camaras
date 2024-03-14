@@ -159,7 +159,8 @@ else
                 $"Se actualizo la info del archivo {archivo.Titulo}", 0));
             txt = $"{TBita}, Se actualizo la info de archivo ";
             Z190_Bitacora bitaTemp = new(ElUser.UserId, txt, ElUser.OrgId);
-            await BitacoraAll(bitaTemp);
+            BitacoraMas(bitaTemp);
+            await BitacoraWrite();
         }
         else
         {
@@ -219,7 +220,8 @@ else
                 $"Se creo un nuevo registro de archivo {archivo.Titulo}", 0));
 
             Z190_Bitacora bitaTemp = new(ElUser.UserId, $"{TBita}, {txt}", ElUser.OrgId);
-            await BitacoraAll(bitaTemp);
+            BitacoraMas(bitaTemp);
+            await BitacoraWrite();
         }
         else
         {
